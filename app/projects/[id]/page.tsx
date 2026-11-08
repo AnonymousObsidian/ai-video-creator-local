@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Check, Clapperboard, Download, FileAudio, FileImage, FileText, FileVideo, Film, LoaderCircle, Music2, Save, Sparkles, Trash2, Upload, WandSparkles } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Check, Clapperboard, Copy, Download, FileAudio, FileImage, FileText, FileVideo, Film, LoaderCircle, Music2, Save, Sparkles, Trash2, Upload, WandSparkles } from "lucide-react";
 import AppShell from "@/components/AppShell";
 
 type Project = { id: string; name: string; topic: string; script: string; repo_url: string; repo_summary: string; format: string; duration: number; status: string };
@@ -14,6 +14,7 @@ type Tab = "editor" | "seo" | "thumbnail";
 
 export default function ProjectEditor() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [loadError, setLoadError] = useState("");
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -70,8 +71,8 @@ export default function ProjectEditor() {
     setTab(nextTab);
     window.history.replaceState(null, "", `/projects/${id}?tab=${nextTab}`);
   }
-  async function saveProject() {
-    if (!project) return;
+  async function saveProject(): Promise<Project | null> {
+    if (!project) return null;
     setBusy("save");
     try {
       const response = await fetch(`/api/projects/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: project.name, topic: project.topic, script: project.script, repo_url: project.repo_url, repo_summary: project.repo_summary, format: project.format, duration: project.duration }) });
@@ -79,8 +80,23 @@ export default function ProjectEditor() {
       if (!response.ok) throw new Error(result.error || "Could not save project.");
       setProject(result.project);
       setToast("Project saved on this computer.");
-    } catch (error) { setToast(error instanceof Error ? error.message : "Could not save project."); }
+      return result.project;
+    } catch (error) { setToast(error instanceof Error ? error.message : "Could not save project."); return null; }
     finally { setBusy(""); }
+  }
+  async function createVariation() {
+    const savedProject = await saveProject();
+    if (!savedProject) return;
+    setBusy("duplicate");
+    try {
+      const response = await fetch(`/api/projects/${id}/duplicate`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not create a variation.");
+      router.push(`/projects/${result.id}?tab=editor`);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Could not create a variation.");
+      setBusy("");
+    }
   }
   function uploadFiles(list: FileList | File[]) {
     if (!list.length) return;
@@ -215,7 +231,7 @@ export default function ProjectEditor() {
     <div className="content">
       <div className="header-row">
         <div><Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--muted)", textDecoration: "none", fontSize: 12, marginBottom: 8 }}><ArrowLeft size={14} /> All projects</Link><input aria-label="Project name" value={project.name} onChange={(event) => updateProject("name", event.target.value)} className="input" style={{ maxWidth: 430, fontSize: 22, fontWeight: 700, padding: "5px 8px", letterSpacing: "-.5px" }} /><p className="subtitle">Your working space for script, assets and exports.</p></div>
-        <button className="btn btn-primary" onClick={() => void saveProject()} disabled={busy !== ""}><Save size={15} />{busy === "save" ? "Saving…" : "Save project"}</button>
+        <div className="toolbar"><button className="btn" onClick={() => void createVariation()} disabled={busy !== ""}><Copy size={15} />{busy === "duplicate" ? "Copying…" : "Make a variation"}</button><button className="btn btn-primary" onClick={() => void saveProject()} disabled={busy !== ""}><Save size={15} />{busy === "save" ? "Saving…" : "Save project"}</button></div>
       </div>
       <div className="toolbar" style={{ marginBottom: 18 }}>
         <button className={`btn ${tab === "editor" ? "btn-primary" : ""}`} onClick={() => selectTab("editor")}><Film size={15} /> Video editor</button>

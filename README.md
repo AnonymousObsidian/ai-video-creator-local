@@ -5,6 +5,7 @@ A local-first video workspace built with Next.js, TypeScript, SQLite, and FFmpeg
 ## What works
 
 - Create, reopen, rename, save, and delete projects. Project metadata is stored in SQLite at `data/creator.sqlite`.
+- Make a variation by duplicating a project, its settings, script and uploaded assets; then edit the copy independently.
 - Upload and remove JPG, PNG, WEBP, MP4, MOV, AVI, MP3, WAV, PDF, DOC/DOCX, TXT, and PPT/PPTX files. Uploads are stored in `data/uploads/`, limited to 100 MB per file and 250 MB per batch, and show browser upload progress.
 - Choose vertical (9:16), landscape (16:9), or square (1:1) output, and a duration from 15 seconds to 5 minutes or a custom duration up to 10 minutes.
 - Draft a script with a local Ollama model, optional OpenAI API, or an **offline writing template**. The mode is configured explicitly; templates are not presented as an AI model.
@@ -152,5 +153,6 @@ data/                      Created at runtime: SQLite DB, uploads and exports
 - **GitHub repository errors:** only public `github.com/owner/repository` URLs are supported. GitHub unauthenticated API rate limits may require waiting before retrying.
 - **Search errors:** check `SEARXNG_URL`, confirm the server is reachable, and enable JSON output in the SearXNG instance.
 - **Create project appears stuck:** wait for the timeout message, confirm the terminal running `npm.cmd run dev` has no API/database error, then reload the browser and retry. The project ID is created before the editor navigation; check the dashboard's recent projects before submitting again to avoid duplicates.
+- **“Another next dev server is already running”:** return to the PowerShell window that started the earlier app and press `Ctrl+C` once. Wait for it to stop, then run `npm.cmd run dev` again. Do not start multiple development servers in the same project folder.
 - **Other devices cannot connect:** confirm `AVC_HOST=0.0.0.0`, use the computer's LAN IP (not `localhost`) from the other device, and permit access only on a trusted Private Windows Firewall profile.
 - **Reset local data:** stop the server, then back up and remove only the project’s `data` folder. This permanently deletes saved projects, uploads, and exports.
